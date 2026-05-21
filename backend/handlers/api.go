@@ -52,6 +52,15 @@ var CurrentData = StreamData {
 	}
 }
 // DataHandler para retornar todos os dados para o Frontend
+func DataHandler(w http.ResponseWritter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	json.NewEnconder(w).Enconder(CurrentData)
+}
+
+
+
+
 // UpdateStatusHandler para atualizar o Status(ex: Café, Codando)
 // UpdateProjectHandler atualiza o projeto atual (via terminal)
 // EndLiveHandler registra os status finais da live
