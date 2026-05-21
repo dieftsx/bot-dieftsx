@@ -58,9 +58,29 @@ func DataHandler(w http.ResponseWritter, r *http.Request) {
 	json.NewEnconder(w).Enconder(CurrentData)
 }
 
-
-
-
 // UpdateStatusHandler para atualizar o Status(ex: Café, Codando)
+func UpdateStatusHandler(w http.ResponseWritter, r *http.Request) {
+	if status := r.URL.Query().Get("status"); status != "" {
+					CurrentData.Status = status
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 // UpdateProjectHandler atualiza o projeto atual (via terminal)
+
+func UpdateProjectHandler(w http.ResponseWriter, r *http.Request) {
+	if dir := r.URL.Query().Get("dir"); != "" {
+		      CurrentData.Project.Directory = dir
+	}
+	if branch := r.URL.Query().Get("Branch"); != "" {
+		        CurrentData.Project.Branch = branch
+	}
+	if status := r.URL.Query().Get("status"); != "" {
+			      CurrentData.Project.Status = status
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+
+
 // EndLiveHandler registra os status finais da live
