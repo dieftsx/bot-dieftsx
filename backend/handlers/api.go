@@ -28,6 +28,29 @@ type StreamData struct {
 
 }
 // Estado Inicial (Vamos notar o 'Letra Maiúscula' para ser exportado, caso o main precise ler diretamente)
+var CurrentData = StreamData {
+	Status: "Pausa para o Café"
+	SystemInfo: map[string]string {
+		"OS":                "Arch Linux",
+		"WM":								 "Hyprland",
+		"Shell":             "Zsh",
+		"Terminal"           "Kitty",
+		"Editor":			       "LazyVim",
+		"Multiplexer":       "Tmux,"
+	},
+	TechStack: []string{"Next.js", "Go"},
+	Project: ProjectInfo {
+		Directory:       "~/",
+		Branch:          "-",
+		Status:          "Aguardando...",
+	},
+	Stats: LiveStats {
+					Duration:    "00:00:00",
+					Lines:       "0"
+					Commits:     "0",
+					Messages:    "0",
+	}
+}
 // DataHandler para retornar todos os dados para o Frontend
 // UpdateStatusHandler para atualizar o Status(ex: Café, Codando)
 // UpdateProjectHandler atualiza o projeto atual (via terminal)
