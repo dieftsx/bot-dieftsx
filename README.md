@@ -42,10 +42,67 @@ obs-live-bot/
 │   └── ending.html          # Cena: Encerramento
 └── scripts/
     └── zsh_aliases.sh       # Funções para o ~/.zshrc
-🚀 Instalação e Uso1. Preparando o TerrenoCertifique-se de ter o Go instalado. Testado nativamente em ambiente Arch Linux / Hyprland.2. Inicializando o ServidorClone o repositório e inicie o backend em Go:Bashgit clone [https://github.com/dieftsx/obs-live-bot.git](https://github.com/dieftsx/obs-live-bot.git)
+```
+
+</details>
+
+## 🚀 Instalação e Uso
+
+### 1. Preparando o Terreno
+
+Certifique-se de ter o Go instalado. Testado nativamente em ambiente Arch Linux / Hyprland.
+
+### 2. Inicializando o Servidor
+
+Clone o repositório e inicie o backend em Go:
+
+```bash
+git clone https://github.com/dieftsx/obs-live-bot.git
 cd obs-live-bot/backend
 
 # Inicia o servidor na porta 8080
 go run main.go
-Nota: Mantenha esta aba do terminal rodando em segundo plano (ou utilize o Tmux) durante a sua live.3. Configurando o OBS StudioAdicione as cenas abaixo utilizando a fonte Navegador (Browser).Cena Principal: http://localhost:8080/main_scene.html (Resolução: 1920x1080)Cena de Pausa: http://localhost:8080/index.html (Resolução Customizada)Cena de Encerramento: http://localhost:8080/ending.html (Resolução Customizada)💡 Dica do OBS: Lembre-se de limpar qualquer CSS customizado na janela de propriedades da fonte e marcar a opção para não renderizar o fundo se ele não estiver sendo exibido.💻 Comandos de Terminal (Zsh)Para não precisar sair do seu fluxo de código, o bot é controlado via atalhos no terminal. Adicione o conteúdo de scripts/zsh_aliases.sh ao seu arquivo ~/.zshrc.ComandoAção Executada na StreambreakAltera o status superior para "Pausa para o Café ☕".codarRetorna o status superior para "Coding Live 💻".update_obsEnvia o path atual (pwd) e a branch ativa para a overlay.fim_liveInicia o assistente de encerramento, colhendo commits diários.🔌 Referência da API (Endpoints REST)O backend roda em localhost:8080 e aceita as seguintes requisições:GET /api/data - Retorna o JSON completo de estado.POST /api/update?status={texto} - Sobrescreve o status da stream.POST /api/update_project?dir={X}&branch={Y}&status={Z} - Atualiza métricas do Git.POST /api/end_live?duration={X}&commits={Y}... - Alimenta a tela de estatísticas.🤝 Let's Connect & ContributeEste projeto foi construído publicamente. Sinta-se à vontade para fazer um fork, melhorar a estilização ou adicionar novas integrações!🐙 GitHub: github.com/dieftsx💼 LinkedIn: linkedin.com/in/diefersonsoares
 ```
+
+> **Nota:** Mantenha esta aba do terminal rodando em segundo plano (ou utilize o Tmux) durante a sua live.
+
+### 3. Configurando o OBS Studio
+
+Adicione as cenas abaixo utilizando a fonte **Navegador (Browser)**:
+
+| Cena               | URL                                             | Resolução            |
+| :----------------- | :---------------------------------------------- | :------------------- |
+| Cena Principal     | `http://localhost:8080/main_scene.html`         | 1920x1080            |
+| Cena de Pausa      | `http://localhost:8080/index.html`              | Customizada          |
+| Cena de Encerramento | `http://localhost:8080/ending.html`           | Customizada          |
+
+> **💡 Dica do OBS:** Lembre-se de limpar qualquer CSS customizado na janela de propriedades da fonte e marcar a opção para não renderizar o fundo se ele não estiver sendo exibido.
+
+## 💻 Comandos de Terminal (Zsh)
+
+Para não precisar sair do seu fluxo de código, o bot é controlado via atalhos no terminal. Adicione o conteúdo de `scripts/zsh_aliases.sh` ao seu arquivo `~/.zshrc`.
+
+| Comando       | Ação Executada na Stream                                    |
+| :------------ | :---------------------------------------------------------- |
+| `break`       | Altera o status superior para "Pausa para o Café ☕".        |
+| `codar`       | Retorna o status superior para "Coding Live 💻".            |
+| `update_obs`  | Envia o path atual (pwd) e a branch ativa para a overlay.   |
+| `fim_live`    | Inicia o assistente de encerramento, colhendo commits diários. |
+
+## 🔌 Referência da API (Endpoints REST)
+
+O backend roda em `localhost:8080` e aceita as seguintes requisições:
+
+| Método | Rota                                | Descrição                                      |
+| :----- | :---------------------------------- | :--------------------------------------------- |
+| `GET`  | `/api/data`                         | Retorna o JSON completo de estado.             |
+| `POST` | `/api/update?status={texto}`        | Sobrescreve o status da stream.                |
+| `POST` | `/api/update_project?dir={X}&branch={Y}&status={Z}` | Atualiza métricas do Git. |
+| `POST` | `/api/end_live?duration={X}&commits={Y}...` | Alimenta a tela de estatísticas.  |
+
+## 🤝 Let's Connect & Contribute
+
+Este projeto foi construído publicamente. Sinta-se à vontade para fazer um fork, melhorar a estilização ou adicionar novas integrações!
+
+- **🐙 GitHub:** [github.com/dieftsx](https://github.com/dieftsx)
+- **💼 LinkedIn:** [linkedin.com/in/diefersonsoares](https://linkedin.com/in/diefersonsoares)
