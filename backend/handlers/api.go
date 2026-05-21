@@ -72,7 +72,7 @@ func UpdateProjectHandler(w http.ResponseWriter, r *http.Request) {
 	if dir := r.URL.Query().Get("dir"); != "" {
 		      CurrentData.Project.Directory = dir
 	}
-	if branch := r.URL.Query().Get("Branch"); != "" {
+	if branch := r.URL.Query().Get("branch"); != "" {
 		        CurrentData.Project.Branch = branch
 	}
 	if status := r.URL.Query().Get("status"); != "" {
@@ -81,6 +81,17 @@ func UpdateProjectHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-
-
 // EndLiveHandler registra os status finais da live
+func EndLiveHandler(w http.ResponseWriter, r *http.Request) {
+		if duration := r.URL.Query().Get("duration"); != "" {
+		      CurrentData.Stats.Duration = duration
+	}
+	if lines := r.URL.Query().Get("lines"); != "" {
+		        CurrentData.Stats.Lines = lines
+	}
+	if commits := r.URL.Query().Get("commits"); != "" {
+			      CurrentData.Stats.Commits = commits
+	}
+	w.WriteHeader(http.StatusOK)
+
+}
