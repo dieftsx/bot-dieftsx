@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        body { display: flex; flex-direction: column; gap: 20px; align-items: flex-start; }
+        .row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.85rem; width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="panel border-cyan" style="width: 350px;">
+        <div class="panel-title">// STATS DA LIVE</div>
+        <div class="row"><span style="color:var(--purple);">🕒 DURAÇÃO</span> <span style="color:var(--text-light); font-weight:bold;" id="stat-duration">00:00:00</span></div>
+        <div class="row"><span style="color:var(--purple);">&lt;/&gt; LINHAS</span> <span style="color:var(--text-light); font-weight:bold;" id="stat-lines">0</span></div>
+        <div class="row"><span style="color:var(--purple);">⚡ COMMIT(S)</span> <span style="color:var(--text-light); font-weight:bold;" id="stat-commits">0</span></div>
+        <div class="row"><span style="color:var(--purple);">💬 MENSAGENS</span> <span style="color:var(--text-light); font-weight:bold;" id="stat-messages">0</span></div>
+    </div>
+    <div style="display: flex; gap: 20px; font-size: 0.8rem; align-items: center; color: var(--text-main);">
+        <strong style="color: var(--purple);">ONDE ME ENCONTRAR:</strong>
+        <span>🐙 github.com/dieftsx</span>
+        <span>💼 linkedin.com/in/diefersonsoares</span>
+    </div>
+    <script src="assets/js/app.js"></script>
+</body>
+</html>

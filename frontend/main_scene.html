@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        body { width: 1920px; height: 1080px; display: flex; flex-direction: column; gap: 15px; }
+        .main-content { display: flex; flex: 1; gap: 15px; }
+        .screen-capture-area { flex: 1; border: 1px solid rgba(122,0,255,0.3); border-radius: 8px; }
+        .sidebar { width: 380px; display: flex; flex-direction: column; gap: 15px; }
+        .bottom-docks { height: 120px; display: flex; gap: 15px; }
+        .dock { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <div class="screen-capture-area"></div>
+        <div class="sidebar">
+            <div class="panel border-purple" style="height: 250px;"><div class="panel-title">📹 WEBCAM</div></div>
+            <div class="panel border-purple" style="flex: 1;"><div class="panel-title">💬 CHAT</div></div>
+            <div class="panel border-cyan">
+                <div class="panel-title">💻 SYSTEM INFO</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.8rem;" id="sys-info"></div>
+            </div>
+            <div class="panel border-purple">
+                <div class="panel-title">⚡ STATUS</div>
+                <div id="status-text" style="font-size: 0.9rem;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="bottom-docks">
+        <div class="panel border-purple dock" style="flex: 1.5;">
+            <div class="panel-title">&lt;/&gt; NOW WORKING ON</div>
+            <div id="dir-path" style="color: var(--text-main); margin-bottom: 5px;">...</div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                <span class="highlight-cyan">⑂ <span id="git-branch">-</span></span>
+                <span id="git-status">-</span>
+            </div>
+        </div>
+        <div class="panel border-cyan dock">
+            <div class="panel-title">🥞 CURRENT STACK</div>
+            <div style="color: var(--text-light); font-weight: bold; letter-spacing: 2px;">NEXT.JS | GO</div>
+        </div>
+        <div class="panel border-purple dock" style="flex: 0.8;">
+            <div class="panel-title">💜 FOLLOW ME</div>
+            <div style="display: flex; flex-direction: column; gap: 5px; font-size: 0.85rem; color: var(--text-main);">
+                <span>🐙 github.com/dieftsx</span>
+                <span>💼 /in/diefersonsoares</span>
+            </div>
+        </div>
+    </div>
+    <script src="assets/js/app.js"></script>
+</body>
+</html>
