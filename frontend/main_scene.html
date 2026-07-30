@@ -2,53 +2,133 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <title>OBS Bot - Main Scene</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
-        body { width: 1920px; height: 1080px; display: flex; flex-direction: column; gap: 15px; }
+        body { width: 1920px; height: 1080px; display: flex; flex-direction: column; gap: 15px; overflow: hidden; padding: 20px; }
+        
+        #scene-coding { display: flex; flex-direction: column; width: 100%; height: 100%; gap: 15px; }
         .main-content { display: flex; flex: 1; gap: 15px; }
-        .screen-capture-area { flex: 1; border: 1px solid rgba(122,0,255,0.3); border-radius: 8px; }
         .sidebar { width: 380px; display: flex; flex-direction: column; gap: 15px; }
         .bottom-docks { height: 120px; display: flex; gap: 15px; }
         .dock { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+        #scene-pause {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+            background: rgba(10, 10, 18, 0.95);
+            border: 2px solid var(--purple);
+            border-radius: 12px;
+            box-shadow: 0 0 35px rgba(122, 0, 255, 0.35);
+        }
+
+        #scene-ending {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+            background: rgba(10, 10, 18, 0.95);
+            border: 2px solid var(--cyan);
+            border-radius: 12px;
+            box-shadow: 0 0 35px rgba(0, 255, 255, 0.35);
+        }
     </style>
 </head>
 <body>
-    <div class="main-content">
-        <div class="screen-capture-area"></div>
-        <div class="sidebar">
-            <div class="panel border-purple" style="height: 250px;"><div class="panel-title">📹 WEBCAM</div></div>
-            <div class="panel border-purple" style="flex: 1;"><div class="panel-title">💬 CHAT</div></div>
-            <div class="panel border-cyan">
-                <div class="panel-title">💻 SYSTEM INFO</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.8rem;" id="sys-info"></div>
+    <!-- Scene 1: Main Coding -->
+    <div id="scene-coding">
+        <div class="main-content">
+            <div class="screen-capture-area terminal-window">
+                <div class="terminal-header">
+                    <div class="window-buttons">
+                        <span class="btn close"></span>
+                        <span class="btn minimize"></span>
+                        <span class="btn maximize"></span>
+                    </div>
+                    <div class="terminal-title" id="code-file-name">󰅩 TERMINAL / CODE VIEW</div>
+                    <div class="ws-badge"><span class="text-green">●</span> HYPRLAND WS2</div>
+                </div>
+                <div class="terminal-body">
+                    <div class="line-numbers" id="code-lines">01</div>
+                    <pre class="code-content" id="code-text">// Conectando ao terminal da Workspace 2...</pre>
+                </div>
             </div>
-            <div class="panel border-purple">
-                <div class="panel-title">⚡ STATUS</div>
-                <div id="status-text" style="font-size: 0.9rem;"></div>
+            <div class="sidebar">
+                <div class="panel border-purple" style="height: 250px;"><div class="panel-title">📹 WEBCAM</div></div>
+                <div class="panel border-purple" style="flex: 1;"><div class="panel-title">💬 CHAT</div></div>
+                <div class="panel border-cyan">
+                    <div class="panel-title">💻 SYSTEM INFO</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.8rem;" id="sys-info"></div>
+                </div>
+                <div class="panel border-purple">
+                    <div class="panel-title">⚡ STATUS</div>
+                    <div id="status-text" style="font-size: 0.9rem;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="bottom-docks">
+            <div class="panel border-purple dock" style="flex: 1.5;">
+                <div class="panel-title">&lt;/&gt; NOW WORKING ON</div>
+                <div id="dir-path" style="color: var(--text-main); margin-bottom: 5px;">...</div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span class="highlight-cyan">⑂ <span id="git-branch">-</span></span>
+                    <span id="git-status">-</span>
+                </div>
+            </div>
+            <div class="panel border-cyan dock">
+                <div class="panel-title">🥞 CURRENT STACK</div>
+                <div id="tech-stack" style="color: var(--text-light); font-weight: bold; letter-spacing: 2px;">NEXT.JS | GO</div>
+            </div>
+            <div class="panel border-purple dock" style="flex: 0.8;">
+                <div class="panel-title">💜 FOLLOW ME</div>
+                <div style="display: flex; flex-direction: column; gap: 5px; font-size: 0.85rem; color: var(--text-main);">
+                    <span>🐙 github.com/dieftsx</span>
+                    <span>💼 /in/diefersonsoares</span>
+                </div>
             </div>
         </div>
     </div>
-    <div class="bottom-docks">
-        <div class="panel border-purple dock" style="flex: 1.5;">
-            <div class="panel-title">&lt;/&gt; NOW WORKING ON</div>
-            <div id="dir-path" style="color: var(--text-main); margin-bottom: 5px;">...</div>
-            <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
-                <span class="highlight-cyan">⑂ <span id="git-branch">-</span></span>
-                <span id="git-status">-</span>
-            </div>
-        </div>
-        <div class="panel border-cyan dock">
-            <div class="panel-title">🥞 CURRENT STACK</div>
-            <div style="color: var(--text-light); font-weight: bold; letter-spacing: 2px;">NEXT.JS | GO</div>
-        </div>
-        <div class="panel border-purple dock" style="flex: 0.8;">
-            <div class="panel-title">💜 FOLLOW ME</div>
-            <div style="display: flex; flex-direction: column; gap: 5px; font-size: 0.85rem; color: var(--text-main);">
-                <span>🐙 github.com/dieftsx</span>
-                <span>💼 /in/diefersonsoares</span>
-            </div>
+
+    <!-- Scene 2: Pause / Break Screen -->
+    <div id="scene-pause">
+        <div style="font-size: 5rem; animation: pulse 1.5s infinite;">☕</div>
+        <h1 class="highlight-purple" style="font-size: 2.8rem; letter-spacing: 4px;">PAUSA PARA O CAFÉ</h1>
+        <p style="color: var(--text-main); font-size: 1.2rem;">Voltamos em instantes! Aproveite para pegar uma água ou café.</p>
+        <div class="panel border-purple" style="width: 480px; text-align: left; margin-top: 10px;">
+            <div class="panel-title">⚡ STATUS DA LIVE</div>
+            <div id="pause-status-text" style="font-size: 1.1rem; color: var(--cyan); margin-bottom: 15px;">● Pausa para o Café ☕</div>
+            <div class="panel-title">💻 AMBIENTE</div>
+            <div id="pause-sys-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85rem;"></div>
         </div>
     </div>
+
+    <!-- Scene 3: Ending Screen -->
+    <div id="scene-ending">
+        <div style="font-size: 4.5rem;">🎉</div>
+        <h1 class="highlight-cyan" style="font-size: 2.8rem; letter-spacing: 4px;">LIVE FINALIZADA</h1>
+        <div class="panel border-cyan" style="width: 480px; margin-top: 10px;">
+            <div class="panel-title">// STATS DA LIVE</div>
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 1rem;">
+                <div style="display:flex; justify-content: space-between;"><span style="color:var(--purple);">🕒 DURAÇÃO</span><strong id="stat-duration-end" style="color:var(--text-light);">00:00:00</strong></div>
+                <div style="display:flex; justify-content: space-between;"><span style="color:var(--purple);">&lt;/&gt; LINHAS</span><strong id="stat-lines-end" style="color:var(--text-light);">0</strong></div>
+                <div style="display:flex; justify-content: space-between;"><span style="color:var(--purple);">⚡ COMMIT(S)</span><strong id="stat-commits-end" style="color:var(--text-light);">0</strong></div>
+                <div style="display:flex; justify-content: space-between;"><span style="color:var(--purple);">💬 MENSAGENS</span><strong id="stat-messages-end" style="color:var(--text-light);">0</strong></div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 30px; font-size: 1.1rem; color: var(--text-main); margin-top: 15px;">
+            <span>🐙 github.com/dieftsx</span>
+            <span>💼 /in/diefersonsoares</span>
+        </div>
+    </div>
+
     <script src="assets/js/app.js"></script>
 </body>
 </html>

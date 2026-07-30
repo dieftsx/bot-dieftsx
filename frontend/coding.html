@@ -2,17 +2,18 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <title>OBS Bot - Coding Overlay</title>
+    <link rel="stylesheet" href="assets/css/style.css">
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap");
       body {
         background: transparent;
-        color: #a9b1d6;
+        color: var(--text-main);
         font-family: "Fira Code", monospace;
         padding: 20px;
       }
       .panel {
-        border: 1px solid #1e2030;
-        background: rgba(10, 10, 15, 0.9);
+        border: 1px solid var(--panel-border);
+        background: var(--panel-bg);
         border-radius: 8px;
         padding: 15px 20px;
         width: 380px;
@@ -25,17 +26,17 @@
         left: 10px;
         width: 30px;
         height: 2px;
-        background: #7a00ff;
-        box-shadow: 0 0 8px #7a00ff;
+        background: var(--purple);
+        box-shadow: 0 0 8px var(--purple);
       }
       .title {
         font-size: 0.75rem;
-        color: #7a00ff;
+        color: var(--purple);
         font-weight: 700;
         margin-bottom: 15px;
       }
       .dir {
-        color: #c0caf5;
+        color: var(--text-light);
         margin-bottom: 15px;
         font-weight: 500;
         font-size: 0.95rem;
@@ -44,33 +45,20 @@
         display: flex;
         justify-content: space-between;
         font-size: 0.8rem;
-        color: #7dcfff;
+        color: var(--cyan);
       }
     </style>
   </head>
   <body>
     <div class="panel">
       <div class="title">&lt;/&gt; NOW WORKING ON</div>
-      <div class="dir" id="dir">Loading...</div>
+      <div class="dir" id="dir-path">Aguardando...</div>
       <div class="git">
-        <span>⑂ <span id="branch">main</span></span>
-        <span id="status">Checking...</span>
+        <span>⑂ <span id="git-branch">-</span></span>
+        <span id="git-status">-</span>
       </div>
     </div>
-    <script>
-      async function fetchProject() {
-        const res = await fetch("http://localhost:8080/api/data");
-        const data = await res.json();
-        document.getElementById("dir").innerText = data.project.directory;
-        document.getElementById("branch").innerText = data.project.branch;
-        const statusEl = document.getElementById("status");
-        statusEl.innerText = data.project.status;
-        statusEl.style.color = data.project.status.includes("Clean")
-          ? "#9ece6a"
-          : "#e0af68";
-      }
-      setInterval(fetchProject, 2000);
-      fetchProject();
-    </script>
+    <script src="assets/js/app.js"></script>
   </body>
 </html>
+

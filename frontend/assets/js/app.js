@@ -1,4 +1,6 @@
-const API_URL = "http://127.0.0.1:8080/api/data";
+const API_URL = window.location.protocol.startsWith("http")
+  ? `${window.location.origin}/api/data`
+  : "http://localhost:8080/api/data";
 
 let lastFollower = null;
 let lastSub = null;
@@ -10,30 +12,44 @@ let isAnimating = false;
 async function fetchStreamData() {
   try {
     const response = await fetch(API_URL);
+    if (!response.ok) return;
     const data = await response.json();
     updateGeneralUI(data);
     checkAlerts(data);
   } catch (error) {
-    console.error("Erro no backend:", error);
+    console.error("Erro ao conectar com o backend:", error);
   }
 }
 
 function updateGeneralUI(data) {
   const el = (id) => document.getElementById(id);
 
-  if (el("status-text"))
-    el("status-text").innerHTML =
-      `<span class="text-green">●</span> ${data.status}`;
+  if (el("status-text")) {
+    el("status-text").innerHTML = `<span class="text-green">●</span> ${data.status}`;
+  }
+  if (el("pause-status-text")) {
+    el("pause-status-text").innerHTML = `<span class="text-green">●</span> ${data.status}`;
+  }
+
+  updateSceneView(data.status);
 
   if (el("sys-info")) {
     const sysList = el("sys-info");
     sysList.innerHTML = "";
-    for (const [key, value] of Object.entries(data.system_info)) {
+    for (const [key, value] of Object.entries(data.system_info || {})) {
       if (sysList.tagName === "UL") {
         sysList.innerHTML += `<li style="margin-bottom:8px;"><strong>${key}:</strong> <span style="color:var(--cyan);">${value}</span></li>`;
       } else {
         sysList.innerHTML += `<div><span style="color:var(--cyan);">${key}</span> <span style="color:var(--text-light);">${value}</span></div>`;
       }
+    }
+  }
+
+  if (el("pause-sys-info")) {
+    const pSys = el("pause-sys-info");
+    pSys.innerHTML = "";
+    for (const [key, value] of Object.entries(data.system_info || {})) {
+      pSys.innerHTML += `<div><span style="color:var(--cyan);">${key}:</span> <span style="color:var(--text-light);">${value}</span></div>`;
     }
   }
 
@@ -46,11 +62,65 @@ function updateGeneralUI(data) {
       : "var(--yellow)";
   }
 
+  if (el("tech-stack") && data.tech_stack) {
+    el("tech-stack").innerText = Array.isArray(data.tech_stack)
+      ? data.tech_stack.join(" | ").toUpperCase()
+      : data.tech_stack;
+  }
+
+  if (el("code-file-name") && data.active_file) {
+    el("code-file-name").innerText = `󰅩 ${data.active_file.file_name || "terminal"}`;
+  }
+
+  if (el("code-text") && data.active_file && data.active_file.content) {
+    const codeText = data.active_file.content;
+    el("code-text").innerText = codeText;
+
+    if (el("code-lines")) {
+      const lineCount = codeText.split("\n").length;
+      let linesHtml = "";
+      for (let i = 1; i <= lineCount; i++) {
+        linesHtml += `${i < 10 ? "0" + i : i}\n`;
+      }
+      el("code-lines").innerText = linesHtml;
+    }
+  }
+
   if (el("stat-duration")) el("stat-duration").innerText = data.stats.duration;
   if (el("stat-lines")) el("stat-lines").innerText = data.stats.lines;
   if (el("stat-commits")) el("stat-commits").innerText = data.stats.commits;
   if (el("stat-messages")) el("stat-messages").innerText = data.stats.messages;
+
+  if (el("stat-duration-end")) el("stat-duration-end").innerText = data.stats.duration;
+  if (el("stat-lines-end")) el("stat-lines-end").innerText = data.stats.lines;
+  if (el("stat-commits-end")) el("stat-commits-end").innerText = data.stats.commits;
+  if (el("stat-messages-end")) el("stat-messages-end").innerText = data.stats.messages;
 }
+
+function updateSceneView(status) {
+  const codingScene = document.getElementById("scene-coding");
+  const pauseScene = document.getElementById("scene-pause");
+  const endingScene = document.getElementById("scene-ending");
+
+  if (!codingScene) return;
+
+  const s = (status || "").toLowerCase();
+
+  if (s.includes("pausa") || s.includes("café") || s.includes("break")) {
+    codingScene.style.display = "none";
+    if (endingScene) endingScene.style.display = "none";
+    if (pauseScene) pauseScene.style.display = "flex";
+  } else if (s.includes("fim") || s.includes("encerra") || s.includes("ending") || s.includes("finalizada")) {
+    codingScene.style.display = "none";
+    if (pauseScene) pauseScene.style.display = "none";
+    if (endingScene) endingScene.style.display = "flex";
+  } else {
+    if (pauseScene) pauseScene.style.display = "none";
+    if (endingScene) endingScene.style.display = "none";
+    codingScene.style.display = "flex";
+  }
+}
+
 
 function checkAlerts(data) {
   if (!document.getElementById("follow-container")) return;
@@ -122,6 +192,8 @@ function processQueue() {
   }, 5000);
 }
 
-setInterval(fetchStreamData, 1000);
+setInterval(fetchStreamData, 100);
 fetchStreamData();
+
+
 
