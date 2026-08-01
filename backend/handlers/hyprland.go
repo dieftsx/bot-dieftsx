@@ -286,7 +286,11 @@ func InspectEnvironment() (string, bool, bool, bool, string, int, string) {
 			}
 			comm := strings.ToLower(strings.TrimSpace(string(data)))
 
-			if comm == "firefox" || comm == "firefox-bin" || comm == "geckomain" {
+			cmdlinePath := fmt.Sprintf("/proc/%d/cmdline", pid)
+			cmdData, _ := os.ReadFile(cmdlinePath)
+			cmdline := strings.ToLower(string(cmdData))
+
+			if comm == "firefox" || comm == "firefox-bin" || comm == "geckomain" || strings.Contains(cmdline, "/firefox") {
 				foundFirefox = true
 			}
 
@@ -323,11 +327,9 @@ func InspectEnvironment() (string, bool, bool, bool, string, int, string) {
 		}
 	}
 
-	// Check active file / typing signal
+	// Check active file / typing signal (only if modified within 5 seconds)
 	if !foundNvim {
 		if _, ok := checkTypingFile(); ok {
-			foundNvim = true
-		} else if data, err := os.ReadFile("/tmp/obs_active_file.txt"); err == nil && len(strings.TrimSpace(string(data))) > 0 {
 			foundNvim = true
 		}
 	}
@@ -370,6 +372,14 @@ func isCodeOrConfigFile(path string) bool {
 }
 
 func checkTypingFile() (ActiveFileInfo, bool) {
+	info, err := os.Stat("/tmp/obs_typing.txt")
+	if err != nil {
+		return ActiveFileInfo{}, false
+	}
+	if time.Since(info.ModTime()) > 5*time.Second {
+		return ActiveFileInfo{}, false
+	}
+
 	data, err := os.ReadFile("/tmp/obs_typing.txt")
 	if err != nil {
 		return ActiveFileInfo{}, false
