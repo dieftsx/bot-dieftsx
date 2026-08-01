@@ -34,12 +34,65 @@ type TmuxPane struct {
 }
 
 type NvimStatusResponse struct {
+	WM                string         `json:"wm"`
 	TerminalWS2Active bool           `json:"terminal_ws2_active"`
 	TerminalName      string         `json:"terminal_name,omitempty"`
 	NvimWS2Active     bool           `json:"nvim_ws2_active"`
+	FirefoxActive     bool           `json:"firefox_active"`
 	NvimPid           int            `json:"nvim_pid,omitempty"`
 	Cwd               string         `json:"cwd,omitempty"`
 	ActiveFile        ActiveFileInfo `json:"active_file,omitempty"`
+}
+
+func detectWM() string {
+	if os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") != "" {
+		return "Hyprland"
+	}
+	xdg := strings.ToLower(os.Getenv("XDG_CURRENT_DESKTOP"))
+	if strings.Contains(xdg, "kde") || strings.Contains(xdg, "plasma") || os.Getenv("KDE_FULL_SESSION") != "" {
+		return "KDE Plasma"
+	}
+	session := strings.ToLower(os.Getenv("DESKTOP_SESSION"))
+	if strings.Contains(session, "plasma") || strings.Contains(session, "kde") {
+		return "KDE Plasma"
+	}
+	if strings.Contains(session, "hyprland") {
+		return "Hyprland"
+	}
+	if isProcessRunning("hyprland") {
+		return "Hyprland"
+	}
+	if isProcessRunning("kwin_wayland") || isProcessRunning("kwin_x11") || isProcessRunning("plasmashell") {
+		return "KDE Plasma"
+	}
+	return "Linux"
+}
+
+func isProcessRunning(name string) bool {
+	entries, err := os.ReadDir("/proc")
+	if err != nil {
+		return false
+	}
+	nameLower := strings.ToLower(name)
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		pid, err := strconv.Atoi(entry.Name())
+		if err != nil {
+			continue
+		}
+		commPath := fmt.Sprintf("/proc/%d/comm", pid)
+		data, err := os.ReadFile(commPath)
+		if err != nil {
+			continue
+		}
+		comm := strings.ToLower(strings.TrimSpace(string(data)))
+		if comm == nameLower {
+			return true
+		}
+	}
+	return false
 }
 
 func getDescendants(parentPid int) []int {
@@ -121,92 +174,91 @@ func getTmuxPanes() []TmuxPane {
 	return panes
 }
 
-func InspectWorkspace2() (bool, bool, string, int, string) {
-	cmd := exec.Command("hyprctl", "clients", "-j")
-	output, err := cmd.Output()
-	if err != nil {
-		return false, false, "", 0, ""
+func InspectEnvironment() (string, bool, bool, bool, string, int, string) {
+	wm := detectWM()
+	termClasses := map[string]string{
+		"kitty": "Kitty", "konsole": "Konsole", "alacritty": "Alacritty",
+		"foot": "Foot", "ghostty": "Ghostty", "wezterm": "WezTerm",
+		"st": "ST", "xterm": "XTerm", "urxvt": "URxvt", "rio": "Rio",
+		"gnome-terminal": "GNOME Terminal", "tilix": "Tilix", "xfce4-terminal": "XFCE Terminal",
 	}
 
-	var clients []HyprClient
-	if err := json.Unmarshal(output, &clients); err != nil {
-		return false, false, "", 0, ""
-	}
-
-	termClasses := map[string]bool{
-		"kitty": true, "alacritty": true, "foot": true, "ghostty": true,
-		"wezterm": true, "st": true, "xterm": true, "urxvt": true,
-		"rio": true, "konsole": true, "gnome-terminal": true,
-	}
-
-	foundTerminal := false
+	foundTerm := false
 	foundNvim := false
+	foundFirefox := false
 	terminalName := ""
 	nvimPid := 0
 	nvimCwd := ""
 
-	tmuxPanes := getTmuxPanes()
+	// 1. Try Hyprland client inspection if running Hyprland
+	if wm == "Hyprland" {
+		cmd := exec.Command("hyprctl", "clients", "-j")
+		if output, err := cmd.Output(); err == nil {
+			var clients []HyprClient
+			if err := json.Unmarshal(output, &clients); err == nil {
+				tmuxPanes := getTmuxPanes()
+				for _, c := range clients {
+					classLower := strings.ToLower(c.Class)
+					titleLower := strings.ToLower(c.Title)
 
-	for _, c := range clients {
-		if c.Workspace.ID != 2 && c.Workspace.Name != "2" {
-			continue
-		}
-
-		classLower := strings.ToLower(c.Class)
-		titleLower := strings.ToLower(c.Title)
-
-		if termClasses[classLower] || strings.Contains(classLower, "term") || strings.Contains(classLower, "kitty") {
-			foundTerminal = true
-			if terminalName == "" {
-				terminalName = c.Class
-			}
-		} else if c.Class != "" {
-			foundTerminal = true
-			if terminalName == "" {
-				terminalName = c.Class
-			}
-		}
-
-		if strings.Contains(titleLower, "nvim") || strings.Contains(titleLower, "neovim") ||
-			strings.Contains(classLower, "nvim") || strings.Contains(classLower, "neovim") {
-			foundNvim = true
-			nvimPid = c.Pid
-			if nvimCwd == "" {
-				nvimCwd = getNvimCwd(c.Pid)
-			}
-		}
-
-		if c.Pid > 0 {
-			if isNvimProcess(c.Pid) {
-				foundNvim = true
-				nvimPid = c.Pid
-				if nvimCwd == "" {
-					nvimCwd = getNvimCwd(c.Pid)
-				}
-			}
-
-			descendants := getDescendants(c.Pid)
-			for _, dPid := range descendants {
-				if isNvimProcess(dPid) {
-					foundNvim = true
-					nvimPid = dPid
-					if nvimCwd == "" {
-						nvimCwd = getNvimCwd(dPid)
+					if strings.Contains(classLower, "firefox") || strings.Contains(titleLower, "firefox") || strings.Contains(c.InitialClass, "firefox") {
+						foundFirefox = true
 					}
-				}
 
-				commPath := fmt.Sprintf("/proc/%d/comm", dPid)
-				data, err := os.ReadFile(commPath)
-				if err == nil && strings.Contains(strings.ToLower(string(data)), "tmux") {
-					for _, pane := range tmuxPanes {
-						if pane.Command == "nvim" || pane.Command == "neovim" {
+					if tName, ok := termClasses[classLower]; ok {
+						foundTerm = true
+						if terminalName == "" {
+							terminalName = tName
+						}
+					} else if classLower != "" && !strings.Contains(classLower, "firefox") && !strings.Contains(classLower, "chrome") {
+						foundTerm = true
+						if terminalName == "" {
+							terminalName = c.Class
+						}
+					}
+
+					if strings.Contains(titleLower, "nvim") || strings.Contains(titleLower, "neovim") ||
+						strings.Contains(classLower, "nvim") || strings.Contains(classLower, "neovim") {
+						foundNvim = true
+						if nvimPid == 0 {
+							nvimPid = c.Pid
+						}
+						if nvimCwd == "" {
+							nvimCwd = getNvimCwd(c.Pid)
+						}
+					}
+
+					if c.Pid > 0 {
+						if isNvimProcess(c.Pid) {
 							foundNvim = true
 							if nvimPid == 0 {
-								nvimPid = pane.Pid
+								nvimPid = c.Pid
 							}
 							if nvimCwd == "" {
-								nvimCwd = pane.Path
+								nvimCwd = getNvimCwd(c.Pid)
 							}
+						}
+						for _, dPid := range getDescendants(c.Pid) {
+							if isNvimProcess(dPid) {
+								foundNvim = true
+								if nvimPid == 0 {
+									nvimPid = dPid
+								}
+								if nvimCwd == "" {
+									nvimCwd = getNvimCwd(dPid)
+								}
+							}
+						}
+					}
+				}
+				for _, pane := range tmuxPanes {
+					if pane.Command == "nvim" || pane.Command == "neovim" {
+						foundNvim = true
+						if nvimPid == 0 {
+							nvimPid = pane.Pid
+						}
+						if nvimCwd == "" {
+							nvimCwd = pane.Path
 						}
 					}
 				}
@@ -214,7 +266,78 @@ func InspectWorkspace2() (bool, bool, string, int, string) {
 		}
 	}
 
-	return foundTerminal, foundNvim, terminalName, nvimPid, nvimCwd
+	// 2. Scan /proc for running processes (Universal for KDE Plasma & Hyprland)
+	entries, err := os.ReadDir("/proc")
+	if err == nil {
+		myPid := os.Getpid()
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				continue
+			}
+			pid, err := strconv.Atoi(entry.Name())
+			if err != nil || pid == myPid {
+				continue
+			}
+
+			commPath := fmt.Sprintf("/proc/%d/comm", pid)
+			data, err := os.ReadFile(commPath)
+			if err != nil {
+				continue
+			}
+			comm := strings.ToLower(strings.TrimSpace(string(data)))
+
+			if comm == "firefox" || comm == "firefox-bin" || comm == "geckomain" {
+				foundFirefox = true
+			}
+
+			if tName, ok := termClasses[comm]; ok {
+				foundTerm = true
+				if terminalName == "" {
+					terminalName = tName
+				}
+			}
+
+			if comm == "nvim" || comm == "neovim" {
+				foundNvim = true
+				if nvimPid == 0 {
+					nvimPid = pid
+				}
+				if nvimCwd == "" {
+					nvimCwd = getNvimCwd(pid)
+				}
+			}
+		}
+	}
+
+	// Check tmux panes universally
+	tmuxPanes := getTmuxPanes()
+	for _, pane := range tmuxPanes {
+		if pane.Command == "nvim" || pane.Command == "neovim" {
+			foundNvim = true
+			if nvimPid == 0 {
+				nvimPid = pane.Pid
+			}
+			if nvimCwd == "" {
+				nvimCwd = pane.Path
+			}
+		}
+	}
+
+	// Check active file / typing signal
+	if !foundNvim {
+		if _, ok := checkTypingFile(); ok {
+			foundNvim = true
+		} else if data, err := os.ReadFile("/tmp/obs_active_file.txt"); err == nil && len(strings.TrimSpace(string(data))) > 0 {
+			foundNvim = true
+		}
+	}
+
+	return wm, foundTerm, foundNvim, foundFirefox, terminalName, nvimPid, nvimCwd
+}
+
+func InspectWorkspace2() (bool, bool, string, int, string) {
+	_, foundTerm, foundNvim, _, termName, nvimPid, nvimCwd := InspectEnvironment()
+	return foundTerm, foundNvim, termName, nvimPid, nvimCwd
 }
 
 func getNvimCwd(pid int) string {
@@ -502,6 +625,76 @@ func extractInsertionsDeletions(stat string) int {
 	return linesSum
 }
 
+func isBinaryPath(path string) bool {
+	ext := strings.ToLower(filepath.Ext(path))
+	binaryExts := map[string]bool{
+		".exe": true, ".bin": true, ".png": true, ".jpg": true, ".jpeg": true,
+		".gif": true, ".ico": true, ".pdf": true, ".zip": true, ".tar": true,
+		".gz": true, ".7z": true, ".o": true, ".a": true, ".so": true,
+	}
+	if binaryExts[ext] {
+		return true
+	}
+	base := filepath.Base(path)
+	if base == "bot-dieftsx" || base == "server" {
+		return true
+	}
+	return false
+}
+
+func getProjectFiles(dir string) []string {
+	if dir == "" {
+		return nil
+	}
+	homeDir, _ := os.UserHomeDir()
+	cleanDir := dir
+	if strings.HasPrefix(cleanDir, "~") && homeDir != "" {
+		cleanDir = filepath.Join(homeDir, strings.TrimPrefix(cleanDir, "~"))
+	}
+
+	var files []string
+	cmd := exec.Command("git", "-C", cleanDir, "ls-files")
+	out, err := cmd.Output()
+	if err == nil && len(out) > 0 {
+		lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+		for _, l := range lines {
+			l = strings.TrimSpace(l)
+			if l != "" && !isBinaryPath(l) {
+				files = append(files, l)
+				if len(files) >= 60 {
+					break
+				}
+			}
+		}
+		if len(files) > 0 {
+			return files
+		}
+	}
+
+	_ = filepath.Walk(cleanDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			name := info.Name()
+			if strings.HasPrefix(name, ".") || name == "node_modules" || name == "target" || name == "vendor" || name == "dist" || name == "build" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		rel, err := filepath.Rel(cleanDir, path)
+		if err == nil && !strings.HasPrefix(rel, ".") && !isBinaryPath(rel) {
+			files = append(files, rel)
+			if len(files) >= 60 {
+				return filepath.SkipDir
+			}
+		}
+		return nil
+	})
+
+	return files
+}
+
 func updateAutoStats(dir string) {
 	if dir == "" {
 		return
@@ -550,29 +743,41 @@ func StartHyprlandMonitor(interval time.Duration) {
 		}
 	}()
 
-	// 1s Workspace & Git monitor
+	// 1s Workspace, Environment & Git monitor
 	go func() {
-		log.Println("🔍 Hyprland Monitor iniciado (Detectando Terminal e Neovim na Workspace 2)...")
+		log.Println("🔍 Environment Monitor iniciado (KDE Plasma & Hyprland)...")
 		for {
-			foundTerm, foundNvim, termName, nvimPid, nvimCwd := InspectWorkspace2()
+			wmName, foundTerm, foundNvim, foundFirefox, termName, nvimPid, nvimCwd := InspectEnvironment()
 
 			mu.Lock()
+			CurrentData.SystemInfo["WM"] = wmName
+
 			if foundTerm {
 				if termName != "" {
-					CurrentData.SystemInfo["Terminal"] = termName + " 🟢 (WS2)"
+					CurrentData.SystemInfo["Terminal"] = termName + " 🟢"
 				} else {
-					CurrentData.SystemInfo["Terminal"] = "Ativo 🟢 (WS2)"
+					CurrentData.SystemInfo["Terminal"] = "Ativo 🟢"
 				}
 			} else {
-				CurrentData.SystemInfo["Terminal"] = "Ausente 🔴 (WS2)"
+				CurrentData.SystemInfo["Terminal"] = "Ausente 🔴"
 			}
 
-			activeFile := findActiveFile(nvimPid, nvimCwd)
-			CurrentData.ActiveFile = activeFile
+			if foundFirefox {
+				CurrentData.SystemInfo["Browser"] = "Firefox 🟢"
+			} else {
+				CurrentData.SystemInfo["Browser"] = "Ausente 🔴"
+			}
 
 			if foundNvim {
-				CurrentData.SystemInfo["Editor"] = "Neovim 🟢 (WS2)"
-				CurrentData.SystemInfo["Workspace 2"] = "Terminal + Nvim ⚡"
+				CurrentData.SystemInfo["Editor"] = "Neovim 🟢"
+				if foundFirefox {
+					CurrentData.SystemInfo["Sessão"] = "Neovim + Firefox 🚀"
+				} else {
+					CurrentData.SystemInfo["Sessão"] = wmName + ": Neovim ⚡"
+				}
+
+				activeFile := findActiveFile(nvimPid, nvimCwd)
+				CurrentData.ActiveFile = activeFile
 
 				if nvimCwd != "" {
 					homeDir, _ := os.UserHomeDir()
@@ -585,18 +790,65 @@ func StartHyprlandMonitor(interval time.Duration) {
 					branch, gitStatus := getGitInfo(nvimCwd)
 					CurrentData.Project.Branch = branch
 					CurrentData.Project.Status = gitStatus
+					CurrentData.Project.Files = getProjectFiles(nvimCwd)
 
 					updateAutoStats(nvimCwd)
 				}
-			} else if foundTerm {
-				CurrentData.SystemInfo["Editor"] = "Terminal 💻 (WS2)"
-				CurrentData.SystemInfo["Workspace 2"] = "Terminal Ativo"
+			} else if foundFirefox {
+				CurrentData.SystemInfo["Editor"] = "Firefox 🌐 (Testes)"
+				CurrentData.SystemInfo["Sessão"] = "Testando Projetos 🧪"
+
+				if typingInfo, ok := checkTypingFile(); ok {
+					CurrentData.ActiveFile = typingInfo
+				} else {
+					CurrentData.ActiveFile = ActiveFileInfo{
+						FileName: "Mozilla Firefox",
+						FilePath: "firefox",
+						Content:  "// Testando projeto no Mozilla Firefox 🌐\n// Navegador aberto para testes de UI / Frontend...",
+						Language: "html",
+					}
+				}
+
 				if nvimCwd != "" {
+					CurrentData.Project.Files = getProjectFiles(nvimCwd)
+					updateAutoStats(nvimCwd)
+				} else if CurrentData.Project.Directory != "" && CurrentData.Project.Directory != "~/" {
+					cleanDir := CurrentData.Project.Directory
+					homeDir, _ := os.UserHomeDir()
+					if strings.HasPrefix(cleanDir, "~") {
+						cleanDir = filepath.Join(homeDir, strings.TrimPrefix(cleanDir, "~"))
+					}
+					CurrentData.Project.Files = getProjectFiles(cleanDir)
+					updateAutoStats(cleanDir)
+				}
+			} else if foundTerm {
+				CurrentData.SystemInfo["Editor"] = "Terminal 💻"
+				CurrentData.SystemInfo["Sessão"] = wmName + ": Terminal Ativo"
+
+				if typingInfo, ok := checkTypingFile(); ok {
+					CurrentData.ActiveFile = typingInfo
+				} else {
+					CurrentData.ActiveFile = ActiveFileInfo{
+						FileName: "Terminal",
+						FilePath: "",
+						Content:  "// Terminal ativo em " + wmName + " (Aguardando Neovim ou Firefox)...",
+						Language: "bash",
+					}
+				}
+				if nvimCwd != "" {
+					CurrentData.Project.Files = getProjectFiles(nvimCwd)
 					updateAutoStats(nvimCwd)
 				}
 			} else {
-				CurrentData.SystemInfo["Editor"] = "Ausente 🔴 (WS2)"
-				CurrentData.SystemInfo["Workspace 2"] = "Nenhum Terminal"
+				CurrentData.SystemInfo["Editor"] = "Ausente 🔴"
+				CurrentData.SystemInfo["Sessão"] = wmName + ": Aguardando..."
+
+				CurrentData.ActiveFile = ActiveFileInfo{
+					FileName: "Sistema",
+					FilePath: "",
+					Content:  "// Aguardando abertura do Neovim ou Mozilla Firefox em " + wmName + "...",
+					Language: "txt",
+				}
 			}
 			mu.Unlock()
 
@@ -609,14 +861,16 @@ func HyprlandStatusHandler(w http.ResponseWriter, r *http.Request) {
 	if setCORS(w, r) {
 		return
 	}
-	foundTerm, foundNvim, termName, nvimPid, cwd := InspectWorkspace2()
+	wm, foundTerm, foundNvim, foundFirefox, termName, nvimPid, cwd := InspectEnvironment()
 	activeFile := findActiveFile(nvimPid, cwd)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(NvimStatusResponse{
+		WM:                wm,
 		TerminalWS2Active: foundTerm,
 		TerminalName:      termName,
 		NvimWS2Active:     foundNvim,
+		FirefoxActive:     foundFirefox,
 		NvimPid:           nvimPid,
 		Cwd:               cwd,
 		ActiveFile:        activeFile,

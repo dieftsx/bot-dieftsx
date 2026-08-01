@@ -12,9 +12,10 @@ import (
 )
 
 type ProjectInfo struct {
-	Directory string `json:"directory"`
-	Branch    string `json:"branch"`
-	Status    string `json:"status"`
+	Directory string   `json:"directory"`
+	Branch    string   `json:"branch"`
+	Status    string   `json:"status"`
+	Files     []string `json:"files,omitempty"`
 }
 
 type LiveStats struct {
@@ -53,10 +54,11 @@ var (
 		Status: "Coding Live 💻",
 		SystemInfo: map[string]string{
 			"OS":          "Arch Linux",
-			"WM":          "Hyprland",
+			"WM":          "Detectando...",
 			"Shell":       "Zsh",
-			"Terminal":    "Kitty",
-			"Editor":      "LazyVim",
+			"Terminal":    "Detectando...",
+			"Editor":      "Detectando...",
+			"Browser":     "Detectando...",
 			"Multiplexer": "Tmux",
 		},
 		TechStack: []string{"Next.js", "Go"},

@@ -31,6 +31,12 @@ function updateGeneralUI(data) {
     el("pause-status-text").innerHTML = `<span class="text-green">●</span> ${data.status}`;
   }
 
+  if (el("wm-badge") && data.system_info) {
+    const wm = data.system_info.WM || "DESKTOP";
+    const sess = data.system_info["Sessão"] || "";
+    el("wm-badge").innerHTML = `<span class="text-green">●</span> ${wm.toUpperCase()}${sess ? ' | ' + sess.toUpperCase() : ''}`;
+  }
+
   updateSceneView(data.status);
 
   if (el("sys-info")) {
@@ -71,6 +77,8 @@ function updateGeneralUI(data) {
   if (el("code-file-name") && data.active_file) {
     el("code-file-name").innerText = `󰅩 ${data.active_file.file_name || "terminal"}`;
   }
+
+  updateFileExplorer(data);
 
   if (el("code-text") && data.active_file && data.active_file.content) {
     const codeText = data.active_file.content;
@@ -194,6 +202,57 @@ function processQueue() {
 
 setInterval(fetchStreamData, 100);
 fetchStreamData();
+
+function getFileIcon(filePath) {
+  const ext = (filePath.split('.').pop() || '').toLowerCase();
+  switch (ext) {
+    case 'go': return '🟦';
+    case 'js': case 'jsx': return '🟨';
+    case 'ts': case 'tsx': return '🔷';
+    case 'html': return '🟧';
+    case 'css': case 'scss': return '🎨';
+    case 'lua': return '🌙';
+    case 'json': case 'yaml': case 'yml': case 'toml': return '⚙️';
+    case 'md': return '📝';
+    case 'sh': return '💻';
+    case 'py': return '🐍';
+    case 'rs': return '🦀';
+    default: return '📄';
+  }
+}
+
+function updateFileExplorer(data) {
+  const treeContainer = document.getElementById("explorer-tree");
+  if (!treeContainer) return;
+
+  const files = (data.project && Array.isArray(data.project.files)) ? data.project.files : [];
+  const activeFileName = (data.active_file && data.active_file.file_name) ? data.active_file.file_name.toLowerCase() : "";
+  const activeFilePath = (data.active_file && data.active_file.file_path) ? data.active_file.file_path.toLowerCase() : "";
+
+  if (files.length === 0) {
+    treeContainer.innerHTML = `<div class="tree-item"><span class="icon">📁</span> <span class="file-name">Nenhum arquivo</span></div>`;
+    return;
+  }
+
+  let html = "";
+  files.forEach((file) => {
+    const icon = getFileIcon(file);
+    const fileNameOnly = file.split('/').pop();
+    const isCurrentActive =
+      (activeFileName && fileNameOnly.toLowerCase() === activeFileName) ||
+      (activeFilePath && activeFilePath.endsWith(file.toLowerCase()));
+
+    const activeClass = isCurrentActive ? "active" : "";
+    html += `
+      <div class="tree-item ${activeClass}" title="${file}">
+        <span class="icon">${icon}</span>
+        <span class="file-name">${file}</span>
+      </div>
+    `;
+  });
+
+  treeContainer.innerHTML = html;
+}
 
 
 
